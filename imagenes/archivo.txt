@@ -1,0 +1,3 @@
+la idea es tomar este ejemplo para crear un desarrollo CRUD en Python que se refiera
+a alquiler de peliculas y pueda generar un stock para saber si a la hs de que solicitan
+la pelicula se encuentra en stock. esta tendra una base de datos real con stock real
