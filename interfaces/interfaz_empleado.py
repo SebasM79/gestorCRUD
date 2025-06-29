@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from empleados import EmpleadoCRUD
+from base_de_datos.bd_empleado import EmpleadoCRUD
 
 def abrir_gestion_empleados():
     ventana = tk.Toplevel()

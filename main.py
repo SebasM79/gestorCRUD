@@ -7,9 +7,10 @@ from tkinter import scrolledtext
 from PIL import Image, ImageTk
 import mysql.connector
 from mysql.connector import Error
-from base_datos import BaseDeDatos
-from empleados import Empleado
-from productos import Producto
+from base_de_datos.base_datos import BaseDeDatos
+from interfaces.interfaz_productos import abrir_gestion_productos
+
+from base_de_datos.bd_producto import ProductoCRUD
 from interfaces.interfaz_empleado import abrir_gestion_empleados
 from interfaces import abrir_gestion_productos
 
@@ -57,11 +58,7 @@ class HamburgueseriaApp:
     def guardar_nuevo_empleado(self, nombre, apellido, horario, ventana):
         if not nombre or not apellido or not horario:
             messagebox.showwarning("Advertencia", "Todos los campos son obligatorios.")
-            return
-        
-        # Insertar el nuevo empleado en la base de datos
-        self.db.insertar_empleado(nombre, horario, apellido)
-        
+                
         messagebox.showinfo("Éxito", "Empleado agregado correctamente.")
         ventana.destroy()  # Cerrar la ventana después de guardar el empleado
 
@@ -211,10 +208,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = HamburgueseriaApp(root)
     root.mainloop()
-    producto_crud = Producto()
-    
-    # Agregar producto
-    producto_crud.eliminar_producto(0)
-
-    # Mostrar todos los productos
-    producto_crud.mostrar_productos()
+   

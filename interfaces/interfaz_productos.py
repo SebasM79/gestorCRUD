@@ -1,47 +1,51 @@
+# interfaces/interfaz_producto.py
+
 import tkinter as tk
 from tkinter import ttk, messagebox
-from productos import Producto
+from base_de_datos.bd_producto import ProductoCRUD
 
-producto_crud = Producto()
 
 def abrir_gestion_productos():
     ventana = tk.Toplevel()
     ventana.title("Gestión de Productos")
-    ventana.geometry("500x400")
+    ventana.geometry("600x500")
+
+    crud = ProductoCRUD()
 
     # Título
-    label_titulo = ttk.Label(ventana, text="Gestión de Productos", font=("Helvetica", 14))
-    label_titulo.pack(pady=10)
+    ttk.Label(ventana, text="Gestión de Productos", font=("Helvetica", 14)).pack(pady=10)
 
-    # Tabla de productos
-    tree = ttk.Treeview(ventana, columns=("ID", "Nombre", "Precio", "Tipo"), show="headings")
-    tree.heading("ID", text="ID")
-    tree.heading("Nombre", text="Nombre")
-    tree.heading("Precio", text="Precio")
-    tree.heading("Tipo", text="Tipo")
-    tree.pack(pady=10, fill="both", expand=True)
+    # -------------------- TABLA --------------------
+    tabla = ttk.Treeview(ventana, columns=("ID", "Nombre", "Precio", "Tipo"), show="headings")
+    for col in ("ID", "Nombre", "Precio", "Tipo"):
+        tabla.heading(col, text=col)
+    tabla.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # Cargar productos existentes
-    for prod in producto_crud.mostrar_productos():
-        tree.insert("", "end", values=prod)
+    def actualizar_tabla():
+        for row in tabla.get_children():
+            tabla.delete(row)
+        for prod in crud.obtener_productos():
+            tabla.insert("", tk.END, values=prod)
 
-    # Formulario para agregar
+    actualizar_tabla()
+
+    # -------------------- FORMULARIO --------------------
     frame_form = ttk.Frame(ventana)
     frame_form.pack(pady=10)
 
-    ttk.Label(frame_form, text="Nombre:").grid(row=0, column=0)
+    ttk.Label(frame_form, text="Nombre:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
     entry_nombre = ttk.Entry(frame_form)
     entry_nombre.grid(row=0, column=1)
 
-    ttk.Label(frame_form, text="Precio:").grid(row=1, column=0)
+    ttk.Label(frame_form, text="Precio:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
     entry_precio = ttk.Entry(frame_form)
     entry_precio.grid(row=1, column=1)
 
-    ttk.Label(frame_form, text="Tipo:").grid(row=2, column=0)
+    ttk.Label(frame_form, text="Tipo:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
     entry_tipo = ttk.Entry(frame_form)
     entry_tipo.grid(row=2, column=1)
 
-    def agregar_producto():
+    def guardar():
         nombre = entry_nombre.get()
         tipo = entry_tipo.get()
         try:
@@ -50,16 +54,31 @@ def abrir_gestion_productos():
             messagebox.showerror("Error", "El precio debe ser numérico.")
             return
 
-        if not nombre or not tipo:
-            messagebox.showwarning("Campos vacíos", "Todos los campos son obligatorios.")
+        if nombre and tipo:
+            crud.agregar_producto(nombre, precio, tipo)
+            messagebox.showinfo("Éxito", "Producto agregado correctamente.")
+            actualizar_tabla()
+            entry_nombre.delete(0, tk.END)
+            entry_precio.delete(0, tk.END)
+            entry_tipo.delete(0, tk.END)
+        else:
+            messagebox.showwarning("Campos obligatorios", "Por favor completá todos los campos.")
+
+    btn_guardar = ttk.Button(ventana, text="Guardar Producto", command=guardar)
+    btn_guardar.pack(pady=10)
+
+    # -------------------- ELIMINAR --------------------
+    def eliminar():
+        seleccionado = tabla.selection()
+        if not seleccionado:
+            messagebox.showwarning("Seleccionar", "Seleccioná un producto para eliminar.")
             return
+        id_producto = tabla.item(seleccionado[0])["values"][0]
+        confirmar = messagebox.askyesno("Confirmar", f"¿Eliminar producto ID {id_producto}?")
+        if confirmar:
+            crud.eliminar_producto(id_producto)
+            actualizar_tabla()
+            messagebox.showinfo("Eliminado", "Producto eliminado correctamente.")
 
-        producto_crud.agregar_producto(nombre, precio, tipo)
-        messagebox.showinfo("Éxito", "Producto agregado correctamente.")
-        tree.insert("", "end", values=(None, nombre, precio, tipo))
-        entry_nombre.delete(0, tk.END)
-        entry_precio.delete(0, tk.END)
-        entry_tipo.delete(0, tk.END)
-
-    btn_agregar = ttk.Button(ventana, text="Agregar producto", command=agregar_producto)
-    btn_agregar.pack(pady=10)
+    btn_eliminar = ttk.Button(ventana, text="Eliminar Producto", command=eliminar)
+    btn_eliminar.pack(pady=10)

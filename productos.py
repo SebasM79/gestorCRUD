@@ -1,57 +1,23 @@
-from mysql.connector import Error
-from base_datos import BaseDeDatos
+# producto.py
 
 class Producto:
-    def __init__(self):
-        self.db = BaseDeDatos()
+    def __init__(self, nombre, precio, tipo):
+        self.nombre = nombre
+        self.precio = precio
+        self.tipo = tipo
 
-    def agregar_producto(self, nombre, precio, tipo):
-        try:
-            cursor = self.db.connection.cursor()
-            query = "INSERT INTO producto (nombre_prod, precio_prod, tipo_prod) VALUES (%s, %s, %s)"
-            values = (nombre, precio, tipo)
-            cursor.execute(query, values)
-            self.db.connection.commit()
-            print("✅ Producto agregado correctamente.")
-        except Error as e:
-            print(f"❌ Error al agregar producto: {e}")
-        finally:
-            cursor.close()
+    def mostrar_info(self):
+        return f"{self.nombre} - Tipo: {self.tipo} - Precio: ${self.precio:.2f}"
 
-    def mostrar_productos(self):
-        try:
-            cursor = self.db.connection.cursor()
-            query = "SELECT * FROM producto"
-            cursor.execute(query)
-            resultados = cursor.fetchall()
-            for fila in resultados:
-                print(f"ID: {fila[0]} | Nombre: {fila[1]} | Precio: ${fila[2]:.2f} | Tipo: {fila[3]}")
-        except Error as e:
-            print(f"❌ Error al consultar productos: {e}")
-        finally:
-            cursor.close()
+    def aplicar_descuento(self, porcentaje):
+        """Aplica un descuento al producto"""
+        descuento = self.precio * (porcentaje / 100)
+        self.precio -= descuento
+        return self.precio
 
-    def actualizar_producto(self, id_producto, nuevo_nombre, nuevo_precio, nuevo_tipo):
-        try:
-            cursor = self.db.connection.cursor()
-            query = "UPDATE producto SET nombre_prod = %s, precio_prod = %s, tipo_prod = %s WHERE id_producto = %s"
-            values = (nuevo_nombre, nuevo_precio, nuevo_tipo, id_producto)
-            cursor.execute(query, values)
-            self.db.connection.commit()
-            print("✅ Producto actualizado correctamente.")
-        except Error as e:
-            print(f"❌ Error al actualizar producto: {e}")
-        finally:
-            cursor.close()
-
-    def eliminar_producto(self, id_producto):
-        try:
-            cursor = self.db.connection.cursor()
-            query = "DELETE FROM producto WHERE id_producto = %s"
-            cursor.execute(query, (id_producto,))
-            self.db.connection.commit()
-            print("🗑️ Producto eliminado correctamente.")
-        except Error as e:
-            print(f"❌ Error al eliminar producto: {e}")
-        finally:
-            cursor.close()
+# Ejemplo de uso (esto lo podés borrar, es solo para pruebas)
+if __name__ == "__main__":
+    prod = Producto("Hamburguesa Doble", 6000, "Combo")
+    print(prod.mostrar_info())
+    prod.aplicar_descuento(10)
+    print(f"Con descuento: {prod.mostrar_info()}")
