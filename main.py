@@ -9,6 +9,7 @@ import mysql.connector
 from mysql.connector import Error
 from base_de_datos.base_datos import BaseDeDatos
 from interfaces.interfaz_productos import abrir_gestion_productos
+from servicios.producto_servicio import ProductoService
 
 from base_de_datos.bd_producto import ProductoCRUD
 from interfaces.interfaz_empleado import abrir_gestion_empleados
@@ -25,7 +26,7 @@ class HamburgueseriaApp:
         self.root = root
         self.root.title("Hamburguesería")
         self.root.geometry("500x400")
-
+        self.producto_service = ProductoService()
         
         self.total_ventas = 0
         self.total_recaudado = 0
@@ -95,108 +96,94 @@ class HamburgueseriaApp:
         apagar_btn.pack(pady=10)
 
     def realizar_pedido(self):
-        nueva_ventana2 = Toplevel(self.root)
+        nueva_ventana2 = tk.Toplevel(self.root)
         nueva_ventana2.title("Realizar pedido")
         nueva_ventana2.geometry("500x600")
 
-        label_nueva = ttk.Label(nueva_ventana2, text="Realizar pedido")
-        label_nueva.grid(row=0, column=0, columnspan=2, pady=20)
+    # Obtener combos desde servicio
+        combos = self.producto_service.obtener_combos()
 
-        scroll_ancho = 40
-        scroll_alto = 2
+        if not combos:
+            messagebox.showinfo("Info", "No hay combos disponibles.")
+            nueva_ventana2.destroy()
+            return
 
-        scroll_combo1 = scrolledtext.ScrolledText(nueva_ventana2, width=scroll_ancho, height=scroll_alto, wrap=tk.WORD, state='disabled')
-        scroll_combo1.grid(row=1, column=0, columnspan=2, padx=10, pady=5)
-        scroll_combo1.config(state='normal')
-        scroll_combo1.insert(tk.INSERT, "Combo 1 Simple (Hamburguesa Simple + Bebidas + Fritas). Valor de $5,000")
-        scroll_combo1.config(state='disabled')
+        self.entries_combos = []
+        fila_actual = 0
 
-        scroll_combo2 = scrolledtext.ScrolledText(nueva_ventana2, width=scroll_ancho, height=scroll_alto, wrap=tk.WORD, state='disabled')
-        scroll_combo2.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
-        scroll_combo2.config(state='normal')
-        scroll_combo2.insert(tk.INSERT, "Combo 2 Doble (Hamburguesa Doble + Bebidas + Fritas). Valor de $6,000")
-        scroll_combo2.config(state='disabled')
+        ttk.Label(nueva_ventana2, text="Menú de Combos", font=("Helvetica", 14)).grid(
+            row=fila_actual, column=0, columnspan=2, pady=10
+        )
+        fila_actual += 1
 
-        scroll_combo3 = scrolledtext.ScrolledText(nueva_ventana2, width=scroll_ancho, height=scroll_alto, wrap=tk.WORD, state='disabled')
-        scroll_combo3.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
-        scroll_combo3.config(state='normal')
-        scroll_combo3.insert(tk.INSERT, "Combo 3 Triple (Hamburguesa Triple + Bebidas + Fritas). Valor de $7,000")
-        scroll_combo3.config(state='disabled')
+        for combo in combos:
+            ttk.Label(nueva_ventana2, text=f"{combo.nombre} - ${combo.precio:.2f}").grid(
+            row=fila_actual, column=0, columnspan=2, padx=10, pady=5
+            )
+            fila_actual += 1
 
-        scroll_furby = scrolledtext.ScrolledText(nueva_ventana2, width=scroll_ancho, height=scroll_alto, wrap=tk.WORD, state='disabled')
-        scroll_furby.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
-        scroll_furby.config(state='normal')
-        scroll_furby.insert(tk.INSERT, "McFurby (helado de dulce de leche). Valor de $2,000")
-        scroll_furby.config(state='disabled')
+            ttk.Label(nueva_ventana2, text="Cantidad:").grid(
+            row=fila_actual, column=0, padx=10, pady=5, sticky="e"
+            )
+            entry = ttk.Entry(nueva_ventana2)
+            entry.grid(row=fila_actual, column=1, padx=10, pady=5, sticky="w")
+            self.entries_combos.append((combo, entry))
+            fila_actual += 1
 
-        label_combo1 = ttk.Label(nueva_ventana2, text="Combo 1: Cantidad de combos")
-        label_combo1.grid(row=5, column=0, padx=10, pady=5, sticky="e")
-        self.entry_combo1 = ttk.Entry(nueva_ventana2)
-        self.entry_combo1.grid(row=5, column=1, padx=10, pady=5, sticky="w")
+    # Botón para calcular total
+        ttk.Button(nueva_ventana2, text="Calcular Total", command=self.calcular_total).grid(
+            row=fila_actual, column=0, columnspan=2, pady=10
+        )
+        fila_actual += 1
 
-        label_combo2 = ttk.Label(nueva_ventana2, text="Combo 2: Cantidad de combos")
-        label_combo2.grid(row=6, column=0, padx=10, pady=5, sticky="e")
-        self.entry_combo2 = ttk.Entry(nueva_ventana2)
-        self.entry_combo2.grid(row=6, column=1, padx=10, pady=5, sticky="w")
-
-        label_combo3 = ttk.Label(nueva_ventana2, text="Combo 3: Cantidad de combos")
-        label_combo3.grid(row=7, column=0, padx=10, pady=5, sticky="e")
-        self.entry_combo3 = ttk.Entry(nueva_ventana2)
-        self.entry_combo3.grid(row=7, column=1, padx=10, pady=5, sticky="w")
-
-        label_furby = ttk.Label(nueva_ventana2, text="McFurby: Cantidad de helados")
-        label_furby.grid(row=8, column=0, padx=10, pady=5, sticky="e")
-        self.entry_furby = ttk.Entry(nueva_ventana2)
-        self.entry_furby.grid(row=8, column=1, padx=10, pady=5, sticky="w")
-
-        # Botón para calcular total
-        self.button_calcular = ttk.Button(nueva_ventana2, text="Calcular Total", command=self.calcular_total)
-        self.button_calcular.grid(row=9, column=0, padx=10, pady=10)
-
-        # Etiqueta para mostrar el total
+    # Mostrar total calculado
         self.label_total = ttk.Label(nueva_ventana2, text="Total: $0")
-        self.label_total.grid(row=9, column=1, padx=10, pady=10)
+        self.label_total.grid(row=fila_actual, column=0, columnspan=2)
+        fila_actual += 1
 
-        # Botón para confirmar pedido
-        self.button_confirmar = ttk.Button(nueva_ventana2, text="Confirmar pedido", command=self.confirmar_pedido)
-        self.button_confirmar.grid(row=10, column=0, columnspan=2, pady=20)
+    # ✅ FUNCIÓN BIEN DEFINIDA DENTRO DE realizar_pedido
+        def confirmar_venta():
+            total = self.calcular_total()
+            if total == 0:
+                messagebox.showwarning("Atención", "No seleccionaste ningún producto.")
+                return
 
-    def calcular_total(self):
-        try:
-            combo1 = int(self.entry_combo1.get() or 0)
-            combo2 = int(self.entry_combo2.get() or 0)
-            combo3 = int(self.entry_combo3.get() or 0)
-            furby = int(self.entry_furby.get() or 0)
-        except ValueError:
-            messagebox.showerror("Error", "Ingrese valores numéricos válidos.")
-            return
+            confirmar = messagebox.askyesno("Confirmar", "¿Deseás confirmar la venta?")
+            if not confirmar:
+                return
 
-        total = combo1 * 5000 + combo2 * 6000 + combo3 * 7000 + furby * 2000
-        self.monto_actual = total  
-        self.label_total.config(text=f"Total: ${total}")
-        return total
+            monto_pagado = simpledialog.askfloat("Pago", f"El total es ${total:.2f}. ¿Con cuánto abona?")
+            if monto_pagado is None:
+                return
 
-    def confirmar_pedido(self):
-        total = self.calcular_total()
+            if monto_pagado < total:
+                messagebox.showerror("Error", "El importe ingresado es menor al total.")
+                return
 
-        if total == 0:
-            messagebox.showwarning("Advertencia", "No ha seleccionado ningún artículo.")
-            return
+            vuelto = monto_pagado - total
+            messagebox.showinfo("Gracias", f"Gracias por su compra.\nSu vuelto es ${vuelto:.2f}")
 
-        importe_pagado = simpledialog.askfloat("Pago", f"El total es ${total}. Ingrese el importe pagado:")
-
-        if importe_pagado is None:
-            return  # Si el usuario cancela el diálogo, no se hace nada
-
-        if importe_pagado < total:
-            messagebox.showwarning("Pago insuficiente", "El importe pagado es insuficiente.")
-        else:
-            vuelto = importe_pagado - total
-            messagebox.showinfo("Pedido confirmado", f"¡Gracias por su compra!\nSu vuelto es ${vuelto:.2f}.")
             self.total_ventas += 1
             self.total_recaudado += total
 
-    def cambio_turno(self, ventana):
+    # Botón para confirmar venta
+        ttk.Button(nueva_ventana2, text="Confirmar Venta", command=confirmar_venta).grid(
+            row=fila_actual, column=0, columnspan=2, pady=10
+        )    
+    def calcular_total(self):
+        total = 0
+        for producto, entry in self.entries_combos:
+            try:
+                cantidad = int(entry.get() or 0)
+                total += cantidad * producto.precio
+            except ValueError:
+                messagebox.showerror("Error", f"Ingrese una cantidad válida para {producto.nombre}")
+                return 0  # cancelamos si hay error
+
+        self.monto_actual = total
+        self.label_total.config(text=f"Total: ${total:.2f}")
+        return total
+def cambio_turno(self, ventana):
         self.hora_egreso = datetime.now()
         diferencia = self.hora_egreso - self.hora_ingreso
         horas_trabajadas = diferencia.total_seconds() / 3600

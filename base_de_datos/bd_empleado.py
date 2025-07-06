@@ -8,7 +8,7 @@ class EmpleadoCRUD:
 
     def agregar_empleado(self, nombre, apellido, horario):
         try:
-            cursor = self.db.connection.cursor()
+            cursor = self.db.connection.cursor(dictionary=True)
             query = "INSERT INTO empleado (nombre_empl, apellido_empl, hora_laboral) VALUES (%s, %s, %s)"
             cursor.execute(query, (nombre, apellido, horario))
             self.db.connection.commit()
@@ -19,7 +19,7 @@ class EmpleadoCRUD:
 
     def obtener_empleados(self):
         try:
-            cursor = self.db.connection.cursor()
+            cursor = self.db.connection.cursor(dictionary=True)
             query = "SELECT id_empleado, nombre_empl, apellido_empl, hora_laboral FROM empleado"
             cursor.execute(query)
             return cursor.fetchall()
@@ -31,7 +31,7 @@ class EmpleadoCRUD:
 
     def eliminar_empleado(self, id_empleado):
         try:
-            cursor = self.db.connection.cursor()
+            cursor = self.db.connection.cursor(dictionary=True)
             query = "DELETE FROM empleado WHERE id_empleado = %s"
             cursor.execute(query, (id_empleado,))
             self.db.connection.commit()
@@ -42,7 +42,7 @@ class EmpleadoCRUD:
 
     def actualizar_empleado(self, id_empleado, nombre, apellido, horario):
         try:
-            cursor = self.db.connection.cursor()
+            cursor = self.db.connection.cursor(dictionary=True)
             query = """
                 UPDATE empleado 
                 SET nombre_empl = %s, apellido_empl = %s, hora_laboral = %s 
